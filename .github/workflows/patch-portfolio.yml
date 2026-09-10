@@ -1,0 +1,47 @@
+name: Patch portfolio
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-portfolio.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch portfolio HTML
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          old_video_tag = '<video autoplay muted loop playsinline preload="metadata" id="intro-video-bg">'
+          new_video_tag = '<video autoplay muted loop playsinline preload="auto" poster="https://res.cloudinary.com/bwhsmbzt/video/upload/so_0,w_1600,q_auto:eco,f_jpg/v1788369361/intro8mb.jpg" id="intro-video-bg">'
+          old_video_src = 'https://res.cloudinary.com/bwhsmbzt/video/upload/v1788369361/intro8mb.mp4'
+          new_video_src = 'https://res.cloudinary.com/bwhsmbzt/video/upload/q_auto:good,vc_auto/v1788369361/intro8mb.mp4'
+          old_cover = 'image: "https://res.cloudinary.com/bwhsmbzt/image/upload/v1788614305/01_1.png",\n          role: "Moving Image / Immersive Installation"'
+          new_cover = 'image: "https://res.cloudinary.com/bwhsmbzt/image/upload/v1789056698/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260911001114.jpg",\n          role: "Moving Image / Immersive Installation"'
+
+          for old, new, label in [
+              (old_video_tag, new_video_tag, 'intro video tag'),
+              (old_video_src, new_video_src, 'intro video source'),
+              (old_cover, new_cover, '2701 Moving Image cover'),
+          ]:
+              if old not in s:
+                  raise SystemExit(f'Missing expected text: {label}')
+              s = s.replace(old, new, 1)
+
+          p.write_text(s, encoding='utf-8')
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Optimize intro loading and update 2701 cover"
+          git push
