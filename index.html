@@ -5480,7 +5480,7 @@
         <div class="about-content">
           <div class="about-label">About</div>
           <div class="about-bio">
-            <p><strong>Duaa Xu (Yining Xu)</strong> is a multidisciplinary artist and designer working across scenography, interaction, moving image and visual design. Her practice explores how digital media and interactive technologies reshape theatrical space and the relationships between <strong>bodies, images and audiences</strong>.</p>
+            <p><strong>Duaa Xu (Yining Xu)</strong> is a multidisciplinary artist and designer working across scenography, interaction, moving image and visual design. Her practice explores how digital media and interactive technologies reshape theatrical space and the relationships between <strong>bodies, images and audiences</strong>. She often works with projection, real-time media and spatial installations, treating technology as an active part of performance rather than simply a tool for displaying images.</p>
             <p>She is currently studying <strong>MA Performance: Design and Practice at Central Saint Martins, University of the Arts London</strong>, and holds a BA in Art and Technology from China Academy of Art.</p>
           </div>
           <div class="about-contact">
@@ -5515,6 +5515,23 @@
     let aboutReturnState = 'INTRO';
     let activeCatIndex = null;
     let detailActiveProjectIndex = 0;
+
+    // Browser history mirrors the portfolio's visual navigation hierarchy.
+    const PORTFOLIO_HISTORY_KEY = 'DUAA_XU_PORTFOLIO';
+    function pushPortfolioHistory(view) {
+      window.history.pushState(
+        { portfolio: PORTFOLIO_HISTORY_KEY, view },
+        '',
+        window.location.href
+      );
+    }
+    function requestPortfolioBack() {
+      if (window.history.state?.portfolio === PORTFOLIO_HISTORY_KEY) {
+        window.history.back();
+      } else {
+        goBack();
+      }
+    }
 
     const portfolioData = [
       {
@@ -6606,6 +6623,7 @@
       // Pointer parallax below is explicitly active during the whole transition too.
       setTimeout(() => {
         appState = 'CATEGORY';
+        pushPortfolioHistory('CATEGORY');
         document.getElementById('nav-subtitle').style.opacity = '1';
         document.getElementById('back-btn').style.opacity = '1';
         document.getElementById('back-btn').style.pointerEvents = 'auto';
@@ -6693,6 +6711,7 @@
       resetCategoryPerspectiveToLoadedState();
 
       activeCatIndex = catIndex;
+      pushPortfolioHistory('ACTIVE_WING');
       appState = 'ACTIVE_WING';
       scrollProgress = 0;
       targetScrollProgress = 0;
@@ -7727,6 +7746,7 @@
       await prepareDetailFirstFrame(projIndex);
       if (entryToken !== detailEntryToken || appState !== 'ACTIVE_WING') return;
 
+      pushPortfolioHistory('DETAIL');
       appState = 'DETAIL';
       document.getElementById('image-stream-stage').classList.remove('active');
       document.getElementById('flat-track-container').style.pointerEvents = 'none';
@@ -7783,6 +7803,7 @@
       if (appState === 'ABOUT') return;
       aboutReturnState = appState;
       if (typeof stopDetailVideoMaster === 'function' && appState === 'DETAIL') stopDetailVideoMaster();
+      pushPortfolioHistory('ABOUT');
       appState = 'ABOUT';
       const about = document.getElementById('about-stage');
       about?.classList.add('active');
@@ -8214,6 +8235,16 @@
     /* Intro click/drag remains dedicated to Mesh interaction. */
 
     window.addEventListener('DOMContentLoaded', () => {
+      window.history.replaceState(
+        { portfolio: PORTFOLIO_HISTORY_KEY, view: 'INTRO' },
+        '',
+        window.location.href
+      );
+      window.addEventListener('popstate', (event) => {
+        if (event.state?.portfolio !== PORTFOLIO_HISTORY_KEY) return;
+        goBack();
+      });
+
       initIntroText();
 
       // Upward scroll enters Categories. Click and drag stay Mesh-only.
@@ -8281,7 +8312,7 @@
       const handleBack = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        goBack();
+        requestPortfolioBack();
       };
       backBtn.addEventListener('click', handleBack);
       backBtn.addEventListener('pointerdown', (e) => {
@@ -8289,10 +8320,15 @@
       });
 
       document.getElementById('about-close')?.addEventListener('click', (e) => {
-        e.preventDefault(); e.stopPropagation(); closeAbout();
+        e.preventDefault(); e.stopPropagation(); requestPortfolioBack();
       });
 
       function returnDirectlyToIntro(e) {
+        window.history.replaceState(
+          { portfolio: PORTFOLIO_HISTORY_KEY, view: 'INTRO' },
+          '',
+          window.location.href
+        );
         e?.preventDefault?.();
         e?.stopPropagation?.();
         if (appState === 'INTRO' && document.body.dataset.introTransitioning !== '1') return;
